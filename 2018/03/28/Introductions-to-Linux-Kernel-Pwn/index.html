@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+
+
+  <html class="light page-post">
+
+
+<head>
+  <meta charset="utf-8">
+  
+  <title>Introductions to Linux Kernel Pwn | F0r_1st&#39;s Blog</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+    <meta name="keywords" content="" />
+  
+
+  <meta name="description" content="BackgroundLinux Kernel pwn is an item of CTF Pwn. Unlike we always solve the common problems with python, we usually do Kernel pwn with C. Since I’m just getting started with it, I want to write somet">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Introductions to Linux Kernel Pwn">
+<meta property="og:url" content="http://yoursite.com/2018/03/28/Introductions-to-Linux-Kernel-Pwn/index.html">
+<meta property="og:site_name" content="F0r_1st&#39;s Blog">
+<meta property="og:description" content="BackgroundLinux Kernel pwn is an item of CTF Pwn. Unlike we always solve the common problems with python, we usually do Kernel pwn with C. Since I’m just getting started with it, I want to write somet">
+<meta property="og:updated_time" content="2018-03-28T03:10:19.475Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Introductions to Linux Kernel Pwn">
+<meta name="twitter:description" content="BackgroundLinux Kernel pwn is an item of CTF Pwn. Unlike we always solve the common problems with python, we usually do Kernel pwn with C. Since I’m just getting started with it, I want to write somet">
+
+  
+
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  <link href="/css/styles.css?v=c114cbe6" rel="stylesheet">
+
+
+  
+    <link rel="stylesheet" href="/css/personal-style.css">
+  
+
+  
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?57e94d016e201fba3603a8a2b0263af0";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  
+  <script type="text/javascript">
+	(function(){
+	    var bp = document.createElement('script');
+	    var curProtocol = window.location.protocol.split(':')[0];
+	    if (curProtocol === 'https') {
+	        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+	    }
+	    else {
+	        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+	    }
+	    var s = document.getElementsByTagName("script")[0];
+	    s.parentNode.insertBefore(bp, s);
+	})();
+  </script>
+
+
+
+  
+
+  
+</head>
+
+<body>
+
+
+  
+    <span id="toolbox-mobile" class="toolbox-mobile"></span>
+  
+
+  <div class="post-header CENTER">
+   
+  <div class="toolbox">
+    <a class="toolbox-entry" href="/">
+      <span class="toolbox-entry-text"></span>
+      <i class="icon-angle-down"></i>
+      <i class="icon-home"></i>
+    </a>
+    <ul class="list-toolbox">
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/archives/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            Blog
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/category/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            Cago
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/link/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            Link
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/search/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            Srch
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+
+
+</div>
+
+
+  <div id="toc" class="toc-article">
+    <strong class="toc-title">Posts List</strong>
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Background"><span class="toc-text">Background</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Analyse"><span class="toc-text">Analyse</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Basic-Knowledge"><span class="toc-text">Basic Knowledge</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#File-struct"><span class="toc-text">File struct</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Mitigation"><span class="toc-text">Mitigation</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Debug"><span class="toc-text">Debug</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Basic-Exploit"><span class="toc-text">Basic Exploit</span></a></li></ol>
+  </div>
+
+
+
+<div class="content content-post CENTER">
+   <article id="post-Introductions-to-Linux-Kernel-Pwn" class="article article-type-post" itemprop="blogPost">
+  <header class="article-header">
+    <h1 class="post-title">Introductions to Linux Kernel Pwn</h1>
+
+    <div class="article-meta">
+      <span>
+        <i class="icon-calendar"></i>
+        <span>2018.03.28</span>
+      </span>
+
+      
+        <span class="article-author">
+          <i class="icon-user"></i>
+          <span>F0r_1st</span>
+        </span>
+      
+
+      
+  <span class="article-category">
+    <i class="icon-list"></i>
+    <a class="article-category-link" href="/categories/Pwn/">Pwn</a>
+  </span>
+
+
+
+      
+        <span>
+          <i class="icon-comment"></i>
+          <a href="https://Kirito0.github.io/2018/03/28/Introductions-to-Linux-Kernel-Pwn/#disqus_thread"></a>
+        </span>
+      
+
+      
+      
+    </div>
+  </header>
+
+  <div class="article-content">
+    
+      <h1 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h1><p>Linux Kernel pwn is an item of CTF Pwn. Unlike we always solve the common problems with python, we usually do Kernel pwn with C. Since I’m just getting started with it, I want to write something down.</p>
+<h1 id="Analyse"><a href="#Analyse" class="headerlink" title="Analyse"></a>Analyse</h1><h2 id="Basic-Knowledge"><a href="#Basic-Knowledge" class="headerlink" title="Basic Knowledge"></a>Basic Knowledge</h2><p>User space to Kernel space</p>
+<ol>
+<li>Switching the GS segment register through swapgs, which is to swap the value of the GS register with the value of a specific position in order to save the GS value and use the value of this position as the GS value when the kernel executes.</li>
+<li><p>The top of the current stack (User space stack top) is recorded in the CPU exclusive variable area, and the top of the kernel stack recorded in the CPU exclusive area is placed in the rsp (esp).</p>
+</li>
+<li><p>By pushing each register value, the code is as follows:</p>
+</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">ENTRY(entry_SYSCALL_64)</span><br><span class="line">	/*</span><br><span class="line">	 * Interrupts are off on entry.</span><br><span class="line">	 * We do not frame this tiny irq-off block with TRACE_IRQS_OFF/ON,</span><br><span class="line">	 * it is too small to ever cause noticeable irq latency.</span><br><span class="line">	 */</span><br><span class="line">	SWAPGS_UNSAFE_STACK</span><br><span class="line">	/*</span><br><span class="line">	 * A hypervisor implementation might want to use a label</span><br><span class="line">	 * after the swapgs, so that it can do the swapgs</span><br><span class="line">	 * for the guest and jump here on syscall.</span><br><span class="line">	 */</span><br><span class="line">GLOBAL(entry_SYSCALL_64_after_swapgs)</span><br><span class="line"></span><br><span class="line">	movq	%rsp, PER_CPU_VAR(rsp_scratch)</span><br><span class="line">	movq	PER_CPU_VAR(cpu_current_top_of_stack), %rsp</span><br><span class="line"></span><br><span class="line">	TRACE_IRQS_OFF</span><br><span class="line"></span><br><span class="line">	/* Construct struct pt_regs on stack */</span><br><span class="line">	pushq	$__USER_DS			/* pt_regs-&gt;ss */</span><br><span class="line">	pushq	PER_CPU_VAR(rsp_scratch)	/* pt_regs-&gt;sp */</span><br><span class="line">	pushq	%r11				/* pt_regs-&gt;flags */</span><br><span class="line">	pushq	$__USER_CS			/* pt_regs-&gt;cs */</span><br><span class="line">	pushq	%rcx				/* pt_regs-&gt;ip */</span><br><span class="line">	pushq	%rax				/* pt_regs-&gt;orig_ax */</span><br><span class="line">	pushq	%rdi				/* pt_regs-&gt;di */</span><br><span class="line">	pushq	%rsi				/* pt_regs-&gt;si */</span><br><span class="line">	pushq	%rdx				/* pt_regs-&gt;dx */</span><br><span class="line">	pushq	%rcx				/* pt_regs-&gt;cx */</span><br><span class="line">	pushq	$-ENOSYS			/* pt_regs-&gt;ax */</span><br><span class="line">	pushq	%r8				/* pt_regs-&gt;r8 */</span><br><span class="line">	pushq	%r9				/* pt_regs-&gt;r9 */</span><br><span class="line">	pushq	%r10				/* pt_regs-&gt;r10 */</span><br><span class="line">	pushq	%r11				/* pt_regs-&gt;r11 */</span><br><span class="line">	sub	$(6*8), %rsp			/* pt_regs-&gt;bp, bx, r12-15 not saved */</span><br></pre></td></tr></table></figure>
+<p>Kernel space return to User space</p>
+<ol>
+<li>Restore GS value by swapgs.</li>
+<li>Restore to user space through sysretq or iretq for execution, if you use Iretq, you still need to give some information in the User space, such as CS value, eflags flag register value, user stack top position and so on.</li>
+</ol>
+<p>For example:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">push $SS_USER_VALUE</span><br><span class="line">push $USERLAND_STACK</span><br><span class="line">push $USERLAND_EFLAGS</span><br><span class="line">push $CS_USER_VALUE</span><br><span class="line">push $USERLAND_FUNCTION_ADDRESS</span><br><span class="line">swapgs</span><br><span class="line">iretq</span><br></pre></td></tr></table></figure>
+<h2 id="File-struct"><a href="#File-struct" class="headerlink" title="File struct"></a>File struct</h2><p>In CTF, we always got these files</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">boot.sh -- a bash script to start Kernel (basically using qemu)</span><br><span class="line">bzImage -- Kernel binary</span><br><span class="line">rootfs.cpio -- an image of the root file, including .ko file, /etc, /bin, /sys, etc</span><br></pre></td></tr></table></figure>
+<p>In most cases, we need to analyse the .ko file, which is a linux Kernel module. By inserting the Kernel module into the Kernel, some driver code can be dynamically loaded to be responsible for interacting with the hardware, or provide some software functions at the Kernel layer. The Kernel module runs in the Kernel space and can interact with device files, such as /dev/. Many of the files in the directory are device files. The use of open and close functions is to open device files, close device files, etc. These functions are defined in the Kernel module, and then set in accordance with certain rules when loading, so through these functions you can call the appropriate set of functions in the Kernel module, and finally complete a series of operations in the Kernel to provide functionality for User space.</p>
+<h2 id="Mitigation"><a href="#Mitigation" class="headerlink" title="Mitigation"></a>Mitigation</h2><p>The Mitigations of Kernel space is almost like User space, such as aslr, canary, dep, etc. But there are some differences.</p>
+<p>In Kernel space there is a mitigation called SMEP, which is used to avoid hijacking the control flow from the Kernel space, making the control flow back to the User space, and execute the User space code as ring 0 to raise the power. When the SMEP is turned on, the CPU will stop executing User space code in ring 0. This is a CPU function that is managed by the CPU’s CR4 register and uses a bit to indicate whether SMEP protection is enabled. However, SMEP protection does not prevent direct access to data from User space, but simply prevents the execution of User-space code.</p>
+<p>SMAP is like SMEP, preventing ring 0 in Kernel from getting data from User space.</p>
+<p>Memory allocation is also required in the Kernel space. Unlike malloc in User space, Kernel uses kmalloc, which uses slab/slub distributors, now more common are slub allocators. This distributor is managed through a multi-level structure. First, there is the cache layer. The cache is a structure. The inside is managed by saving empty objects, partially using objects, and using objects completely. Objects refer to memory objects, that is will be allocated or a part of the Kernel space that is allocated. Kmalloc uses multiple caches, one cache for a set of memory objects of size two.</p>
+<p>The slab allocator strictly differentiates according to the cache. Different caches cannot be allocated on one page. The slub allocator is looser. If different caches are allocated the same size, they may be within one page. This point is very important, which The basic exploit will use.</p>
+<h1 id="Debug"><a href="#Debug" class="headerlink" title="Debug"></a>Debug</h1><p>First we need to unpack .cpio</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mkdir initframs &amp;&amp; cp test.cpio initframs &amp;&amp; <span class="built_in">cd</span> initframs</span><br><span class="line">cpio -idmv &lt; test.cpio</span><br></pre></td></tr></table></figure>
+<p>Now, we can find .ko and load it to ida to analyse.</p>
+<p>Then we copy our exp to initframs and do</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">find ./* | cpio -H newc -o &gt; test.cpio</span><br></pre></td></tr></table></figure>
+<p>After that, when we start Kernel, we will find exp in it.</p>
+<p>Start Kernel with ‘-s’ parameter, such as</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">qemu-system-x86_64 \</span><br><span class="line">-m 256M \</span><br><span class="line">-Kernel ./bzImage \</span><br><span class="line">-initrd  ./core.cpio \</span><br><span class="line">-append <span class="string">"root=/dev/ram rw console=ttyS0 oops=panic panic=1 quiet kaslr"</span> \</span><br><span class="line">-netdev User,id=t0, -device e1000,netdev=t0,id=nic0 \</span><br><span class="line">-nographic  \</span><br><span class="line">-s \</span><br></pre></td></tr></table></figure>
+<p>Then we can debug Kernel in gdb</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">target remote tcp::1234</span><br></pre></td></tr></table></figure>
+<p>We can use some useful command</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">lsmod -- list addresses of loaded modules</span><br><span class="line">cat /proc/kallsyms -- get addresses of all symbols in Kernel</span><br></pre></td></tr></table></figure>
+<h1 id="Basic-Exploit"><a href="#Basic-Exploit" class="headerlink" title="Basic Exploit"></a>Basic Exploit</h1><p>Since the Kernel manages running processes, it keeps track of permissions. </p>
+<p>Conveniently, the Linux Kernel has a wrapper for updating process credentials.</p>
+<p><a href="https://elixir.bootlin.com/linux/v4.12.2/source" target="_blank" rel="noopener">Linux Kernel source code</a></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">task_struct</span> &#123;</span></span><br><span class="line">	...</span><br><span class="line">	<span class="comment">/* Process credentials: */</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">/* Tracer's credentials at attach: */</span></span><br><span class="line">	<span class="keyword">const</span> <span class="class"><span class="keyword">struct</span> <span class="title">cred</span> __<span class="title">rcu</span>		*<span class="title">ptracer_cred</span>;</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">/* Objective and real subjective task credentials (COW): */</span></span><br><span class="line">	<span class="keyword">const</span> <span class="class"><span class="keyword">struct</span> <span class="title">cred</span> __<span class="title">rcu</span>		*<span class="title">real_cred</span>;</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">/* Effective (overridable) subjective task credentials (COW): */</span></span><br><span class="line">	<span class="keyword">const</span> <span class="class"><span class="keyword">struct</span> <span class="title">cred</span> __<span class="title">rcu</span>		*<span class="title">cred</span>;</span></span><br><span class="line">	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">struct cred *<span class="title">prepare_kernel_cred</span><span class="params">(struct task_struct *daemon)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">const</span> <span class="class"><span class="keyword">struct</span> <span class="title">cred</span> *<span class="title">old</span>;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">cred</span> *<span class="title">new</span>;</span></span><br><span class="line">	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">commit_creds</span><span class="params">(struct cred *<span class="keyword">new</span>)</span></span></span><br><span class="line"><span class="function"></span>&#123;	</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">task_struct</span> *<span class="title">task</span> = <span class="title">current</span>;</span></span><br><span class="line">	<span class="keyword">const</span> <span class="class"><span class="keyword">struct</span> <span class="title">cred</span> *<span class="title">old</span> = <span class="title">task</span>-&gt;<span class="title">real_cred</span>;</span></span><br><span class="line">	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Therefore, we could</p>
+<ol>
+<li>Create a root struct cred by calling prepare_kernel_cred(0)</li>
+<li>Call commit_creds(root cred *) to set the credential of the process to root</li>
+<li>swapgs &amp; iretq to User space to system(‘/bin/sh’)</li>
+</ol>
+
+    
+  </div>
+
+  
+      <div class="git"></div>
+  
+
+</article>
+
+
+   
+
+   
+  <div class="box-prev-next clearfix">
+    <a class="show pull-left" href="/2018/03/27/QWB2018-xx-game-Write-Up/">
+        <i class="icon icon-angle-left"></i>
+    </a>
+    <a class="hide pull-right" href="/">
+        <i class="icon icon-angle-right"></i>
+    </a>
+  </div>
+
+
+
+
+</div>
+
+
+  <a id="backTop" class="back-top">
+    <i class="icon-angle-up"></i>
+  </a>
+
+
+
+
+  <div class="modal" id="modal">
+  <span id="cover" class="cover hide"></span>
+  <div id="modal-dialog" class="modal-dialog hide-dialog">
+    <div class="modal-header">
+      <span id="close" class="btn-close">Close</span>
+    </div>
+    <hr>
+    <div class="modal-body">
+      <ul class="list-toolbox">
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/archives/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              Blog
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/category/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              Cago
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/link/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              Link
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/search/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              Srch
+            </a>
+          </li>
+        
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+
+  
+      <div class="fexo-comments comments-post">
+    
+  <section class="disqus-comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+  </section>
+
+  <script>
+    var disqus_shortname = 'f0r1st';
+    
+    var disqus_url = 'http://yoursite.com/2018/03/28/Introductions-to-Linux-Kernel-Pwn/';
+    
+    (function(){
+      var dsq = document.createElement('script');
+      dsq.type = 'text/javascript';
+      dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+
+  <script id="dsq-count-scr" src="//f0r1st.disqus.com/count.js" async></script>
+
+
+
+    
+    
+
+    
+    
+
+    
+
+    
+    
+
+  </div>
+
+  
+
+  <script type="text/javascript">
+  function loadScript(url, callback) {
+    var script = document.createElement('script')
+    script.type = 'text/javascript';
+
+    if (script.readyState) { //IE
+      script.onreadystatechange = function() {
+        if (script.readyState == 'loaded' ||
+          script.readyState == 'complete') {
+          script.onreadystatechange = null;
+          callback();
+        }
+      };
+    } else { //Others
+      script.onload = function() {
+        callback();
+      };
+    }
+
+    script.src = url;
+    document.getElementsByTagName('head')[0].appendChild(script);
+  }
+
+  window.onload = function() {
+    loadScript('/js/bundle.js?235683', function() {
+      // load success
+    });
+  }
+</script>
+
+</body>
+</html>
